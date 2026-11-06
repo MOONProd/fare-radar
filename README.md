@@ -59,6 +59,20 @@ Claude에 연결된 **Fare Radar MCP 서버**로 가격 기록을 대화하듯 �
 | `run_now` | "에어프레미아만 지금 조회해 줘" |
 | `add_route` / `remove_route` | "방콕도 추적해 줘" |
 
+## 🔌 내 Claude에 연결하기 (누구나)
+
+공개용 **읽기 전용 MCP 서버**가 있어서, 누구나 자기 Claude에서 이 가격 기록을 물어볼 수 있습니다.
+
+```
+https://fare-radar-mcp.vercel.app/mcp
+```
+
+1. Claude(웹·데스크톱)에서 **설정 → 커넥터 → 사용자 지정 커넥터 추가**를 엽니다.
+2. 이름에 `Fare Radar`, URL에 위 주소를 넣고 추가합니다. 로그인은 필요 없습니다.
+3. 채팅에서 "지금 제일 싼 일본 도시 알려줘"처럼 물어보면 됩니다.
+
+공개 서버에서 쓸 수 있는 도구는 `list_routes`, `get_lowest_prices`, `get_price_history`, `find_cheapest_dates`입니다. 저장된 기록만 읽고, 실시간 검색이나 설정 변경은 할 수 없습니다.
+
 ## 기술 스택
 
 - **Python**: 조회 스크립트(표준 라이브러리만 사용), MCP 서버(MCP Python SDK)
