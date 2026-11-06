@@ -1,0 +1,517 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Fare Radar</title>
+<meta name="description" content="인천 출발 일본·런던·미국 왕복 항공권 최저가를 매일 추적합니다.">
+<meta property="og:title" content="Fare Radar · 항공권 최저가">
+<meta property="og:description" content="인천 출발 일본·런던·미국 왕복 항공권 최저가를 매일 추적합니다.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>✈️</text></svg>">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
+<style>
+:root {
+  --bg: #07090e;
+  --bg-glow-1: rgba(99, 102, 241, .18);
+  --bg-glow-2: rgba(236, 72, 153, .12);
+  --surface: rgba(255, 255, 255, .04);
+  --surface-2: rgba(255, 255, 255, .07);
+  --border: rgba(255, 255, 255, .08);
+  --border-strong: rgba(255, 255, 255, .16);
+  --text: #f4f6fb;
+  --text-2: #a6adbd;
+  --text-3: #6b7284;
+  --good: #34d399;
+  --good-bg: rgba(52, 211, 153, .12);
+  --shadow: 0 20px 60px -20px rgba(0, 0, 0, .6);
+  color-scheme: dark;
+}
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme="dark"]) {
+    --bg: #f4f5f9;
+    --bg-glow-1: rgba(99, 102, 241, .14);
+    --bg-glow-2: rgba(236, 72, 153, .10);
+    --surface: rgba(255, 255, 255, .75);
+    --surface-2: #ffffff;
+    --border: rgba(15, 23, 42, .07);
+    --border-strong: rgba(15, 23, 42, .14);
+    --text: #0d1220;
+    --text-2: #4b5468;
+    --text-3: #8a91a3;
+    --good: #059669;
+    --good-bg: rgba(5, 150, 105, .10);
+    --shadow: 0 20px 50px -24px rgba(15, 23, 42, .25);
+    color-scheme: light;
+  }
+}
+:root[data-theme="light"] {
+  --bg: #f4f5f9; --bg-glow-1: rgba(99,102,241,.14); --bg-glow-2: rgba(236,72,153,.10);
+  --surface: rgba(255,255,255,.75); --surface-2: #fff; --border: rgba(15,23,42,.07);
+  --border-strong: rgba(15,23,42,.14); --text: #0d1220; --text-2: #4b5468; --text-3: #8a91a3;
+  --good: #059669; --good-bg: rgba(5,150,105,.10); --shadow: 0 20px 50px -24px rgba(15,23,42,.25);
+  color-scheme: light;
+}
+
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body {
+  background: var(--bg);
+  background-image:
+    radial-gradient(900px 500px at 10% -10%, var(--bg-glow-1), transparent 60%),
+    radial-gradient(800px 500px at 100% 0%, var(--bg-glow-2), transparent 60%);
+  background-attachment: fixed;
+  color: var(--text);
+  font-family: "Pretendard Variable", Pretendard, -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", sans-serif;
+  font-size: 15px; line-height: 1.5; letter-spacing: -0.01em;
+  -webkit-font-smoothing: antialiased;
+  min-height: 100vh;
+}
+.num { font-variant-numeric: tabular-nums; letter-spacing: -0.03em; }
+.wrap { max-width: 1180px; margin: 0 auto; padding: 22px 20px 80px; }
+
+/* top bar */
+.top { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.brand { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 17px; letter-spacing: -0.02em; }
+.logo { width: 32px; height: 32px; border-radius: 10px; display: grid; place-items: center;
+  background: conic-gradient(from 200deg, #6366f1, #ec4899, #f59e0b, #6366f1); color: #fff; font-size: 16px;
+  box-shadow: 0 6px 20px -6px rgba(236, 72, 153, .6); }
+.brand small { display: block; font-weight: 500; font-size: 12px; color: var(--text-3); letter-spacing: 0; }
+.status { display: flex; align-items: center; gap: 8px; font-size: 12.5px; color: var(--text-2);
+  padding: 7px 12px; border: 1px solid var(--border); border-radius: 999px; background: var(--surface); backdrop-filter: blur(12px); }
+.pulse { width: 7px; height: 7px; border-radius: 50%; background: var(--good); position: relative; }
+.pulse::after { content: ""; position: absolute; inset: -4px; border-radius: 50%; border: 2px solid var(--good); opacity: 0;
+  animation: ping 2.4s ease-out infinite; }
+@keyframes ping { 0% { transform: scale(.4); opacity: .8; } 100% { transform: scale(1.6); opacity: 0; } }
+.theme-btn { border: 1px solid var(--border); background: var(--surface); color: var(--text-2); border-radius: 999px;
+  width: 34px; height: 34px; cursor: pointer; font-size: 15px; }
+
+/* hero */
+.hero { margin: 44px 0 30px; }
+.eyebrow { color: var(--text-3); font-size: 13px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; }
+.hero h1 { font-size: clamp(30px, 5.4vw, 56px); line-height: 1.08; margin: 10px 0 12px; font-weight: 800; letter-spacing: -0.045em; }
+.hero h1 .city { background: var(--hero-grad, linear-gradient(90deg, #f472b6, #fb923c)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.hero .price-line { color: var(--text-2); font-size: clamp(15px, 2vw, 18px); }
+.hero .price-line b { color: var(--text); font-weight: 700; }
+.stats { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 22px; }
+.stat { padding: 10px 14px; border: 1px solid var(--border); border-radius: 14px; background: var(--surface); backdrop-filter: blur(12px); }
+.stat .v { font-size: 20px; font-weight: 700; }
+.stat .l { font-size: 12px; color: var(--text-3); }
+
+/* deal strip */
+.deals { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 14px; margin-bottom: 34px; }
+.deal { position: relative; overflow: hidden; border-radius: 22px; padding: 18px 18px 14px; cursor: pointer; color: var(--text);
+  background: linear-gradient(140deg, color-mix(in srgb, var(--p1) 16%, #10131a), color-mix(in srgb, var(--p2) 10%, #10131a));
+  border: 1px solid color-mix(in srgb, var(--p1) 22%, transparent);
+  transition: transform .25s cubic-bezier(.2,.8,.2,1), box-shadow .25s; isolation: isolate; text-align: left; font: inherit; }
+.deal .p { color: var(--p1); }
+.deal:hover { transform: translateY(-4px); }
+.deal.on { outline: 2px solid var(--a1); outline-offset: 3px; }
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme="dark"]) .deal { color: var(--ink); background: linear-gradient(140deg, var(--p1), var(--p2)); border-color: rgba(15,23,42,.04); box-shadow: 0 14px 34px -22px var(--a1); }
+  :root:not([data-theme="dark"]) .deal .p { color: var(--ink); }
+}
+:root[data-theme="light"] .deal { color: var(--ink); background: linear-gradient(140deg, var(--p1), var(--p2)); border-color: rgba(15,23,42,.04); box-shadow: 0 14px 34px -22px var(--a1); }
+:root[data-theme="light"] .deal .p { color: var(--ink); }
+.deal .flag { font-size: 22px; }
+.deal .g { font-size: 13px; opacity: .8; font-weight: 600; margin-left: 4px; }
+.deal .c { font-size: 14px; margin-top: 14px; opacity: .9; }
+.deal .p { font-size: 30px; font-weight: 800; letter-spacing: -0.04em; line-height: 1.1; }
+.deal .d { font-size: 12px; opacity: .85; margin-top: 2px; }
+.deal svg { position: absolute; right: 0; bottom: 0; width: 55%; height: 60px; opacity: .7; }
+.chip { display: inline-flex; align-items: center; gap: 4px; font-size: 11.5px; font-weight: 700; padding: 3px 8px; border-radius: 999px; }
+.deal .chip { background: color-mix(in srgb, var(--a1) 18%, transparent); color: inherit; position: absolute; top: 16px; right: 16px; }
+
+/* section heading */
+.sec-h { display: flex; align-items: end; justify-content: space-between; gap: 12px; margin: 0 0 14px; flex-wrap: wrap; }
+.sec-h h2 { margin: 0; font-size: 22px; letter-spacing: -0.03em; }
+.sec-h .hint { color: var(--text-3); font-size: 13px; }
+
+/* detail panel */
+.detail { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 14px; margin-bottom: 30px; }
+.panel { border: 1px solid var(--border); background: var(--surface); backdrop-filter: blur(16px); border-radius: 22px; padding: 20px; }
+.chart-head { display: flex; justify-content: space-between; align-items: start; gap: 10px; }
+.chart-head .t { font-size: 13px; color: var(--text-3); }
+.chart-head .n { font-size: 22px; font-weight: 700; letter-spacing: -0.03em; }
+.chart-box { position: relative; height: 280px; margin-top: 10px; }
+.chart-box svg { width: 100%; height: 100%; overflow: visible; }
+.chart-box .axis { fill: var(--text-3); font-size: 11px; }
+.chart-box .grid { stroke: var(--border); }
+.tip { position: absolute; pointer-events: none; transform: translate(-50%, calc(-100% - 14px)); white-space: nowrap;
+  background: var(--surface-2); border: 1px solid var(--border-strong); border-radius: 12px; padding: 8px 11px; font-size: 12.5px;
+  box-shadow: var(--shadow); opacity: 0; transition: opacity .15s; color: var(--text); }
+.tip b { font-size: 15px; display: block; }
+.tip.show { opacity: 1; }
+.empty { color: var(--text-3); text-align: center; padding: 70px 0; font-size: 14px; }
+
+.info .big { font-size: 34px; font-weight: 800; letter-spacing: -0.045em; line-height: 1.1; margin: 4px 0 2px; }
+.info .lbl { font-size: 12px; color: var(--text-3); font-weight: 600; }
+.info dl { margin: 16px 0 18px; display: grid; grid-template-columns: auto 1fr; gap: 9px 14px; font-size: 14px; }
+.info dt { color: var(--text-3); }
+.info dd { margin: 0; text-align: right; font-weight: 600; }
+.good { color: var(--good); }
+.chip.good { background: var(--good-bg); color: var(--good); }
+.cta { display: flex; align-items: center; justify-content: center; gap: 6px; width: 100%; padding: 12px; border-radius: 14px;
+  font-weight: 700; color: #fff; text-decoration: none; background: linear-gradient(120deg, var(--c1), var(--c2));
+  box-shadow: 0 10px 24px -14px var(--c1); transition: transform .2s; }
+.cta:hover { transform: translateY(-2px); }
+.cta.off { opacity: .4; pointer-events: none; }
+
+/* tabs */
+.tabs { display: inline-flex; gap: 4px; padding: 4px; border-radius: 999px; border: 1px solid var(--border); background: var(--surface);
+  backdrop-filter: blur(12px); overflow-x: auto; max-width: 100%; scrollbar-width: none; }
+.tab { border: 0; background: transparent; color: var(--text-2); font: inherit; font-weight: 600; font-size: 14px; padding: 8px 14px;
+  border-radius: 999px; cursor: pointer; white-space: nowrap; transition: background .2s, color .2s; }
+.tab.on { background: var(--text); color: var(--bg); }
+.tab .cnt { opacity: .55; font-weight: 500; margin-left: 3px; }
+
+/* city cards */
+.cities { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 12px; margin-top: 16px; }
+.cc { position: relative; text-align: left; font: inherit; color: inherit; cursor: pointer; padding: 16px 16px 12px;
+  border-radius: 18px; border: 1px solid var(--border); background: var(--surface); backdrop-filter: blur(12px);
+  transition: transform .2s cubic-bezier(.2,.8,.2,1), border-color .2s, background .2s;
+  animation: rise .5s cubic-bezier(.2,.8,.2,1) both; animation-delay: calc(var(--i) * 30ms); }
+@keyframes rise { from { opacity: 0; transform: translateY(10px); } }
+.cc:hover { transform: translateY(-3px); border-color: var(--border-strong); }
+.cc.on { border-color: var(--c1); box-shadow: 0 0 0 1px var(--c1), 0 14px 30px -18px var(--c1); }
+.cc .rank { position: absolute; top: 14px; right: 14px; font-size: 12px; color: var(--text-3); font-weight: 700; }
+.cc .name { font-weight: 700; font-size: 16px; }
+.cc .code { font-size: 11.5px; color: var(--text-3); font-weight: 600; margin-left: 4px; }
+.cc .pr { font-size: 22px; font-weight: 800; letter-spacing: -0.04em; margin-top: 8px; }
+.cc .meta { font-size: 12.5px; color: var(--text-2); margin-top: 1px; }
+.cc svg { width: 100%; height: 34px; margin-top: 8px; display: block; }
+.cc .chip { position: absolute; top: 12px; right: 12px; }
+.cc.top1 { background: linear-gradient(160deg, color-mix(in srgb, var(--c1) 18%, transparent), var(--surface)); }
+
+footer { margin-top: 50px; color: var(--text-3); font-size: 12.5px; text-align: center; }
+
+@media (max-width: 860px) {
+  .detail { grid-template-columns: 1fr; }
+  .hero { margin-top: 30px; }
+}
+@media (max-width: 600px) {
+  .deals { display: flex; overflow-x: auto; scroll-snap-type: x mandatory; gap: 10px;
+    margin: 0 -16px 28px; padding: 6px 16px 10px; scrollbar-width: none; }
+  .deals::-webkit-scrollbar { display: none; }
+  .deal { flex: 0 0 78%; scroll-snap-align: center; }
+}
+@media (max-width: 480px) {
+  .wrap { padding: 16px 16px 60px; }
+  .cities { grid-template-columns: 1fr 1fr; gap: 10px; }
+  .cc { padding: 13px 12px 10px; }
+  .cc .pr { font-size: 18px; }
+  .chart-box { height: 220px; }
+  .status .long { display: none; }
+}
+@media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top">
+    <div class="brand"><div class="logo">✈</div><div>Fare Radar<small>인천 출발 왕복 최저가</small></div></div>
+    <div style="display:flex;gap:8px;align-items:center">
+      <div class="status"><span class="pulse"></span><span id="updated"></span></div>
+      <button class="theme-btn" id="themeBtn" title="테마 전환">◐</button>
+    </div>
+  </div>
+
+  <section class="hero">
+    <div class="eyebrow" id="eyebrow">지금 가장 싼 여행지</div>
+    <h1 id="heroTitle"></h1>
+    <div class="price-line" id="heroLine"></div>
+    <div class="stats" id="stats"></div>
+  </section>
+
+  <section class="deals" id="deals"></section>
+
+  <div class="sec-h">
+    <div class="tabs" id="tabs"></div>
+    <div class="hint">카드를 누르면 날짜별 가격을 볼 수 있어요</div>
+  </div>
+
+  <section class="detail">
+    <div class="panel">
+      <div class="chart-head">
+        <div><div class="t">출발일별 최저가</div><div class="n" id="chartTitle"></div></div>
+        <span class="chip good" id="chartChip"></span>
+      </div>
+      <div class="chart-box" id="chart"></div>
+    </div>
+    <div class="panel info" id="info"></div>
+  </section>
+
+  <section>
+    <div class="sec-h"><h2 id="gridTitle"></h2><div class="hint" id="gridHint"></div></div>
+    <div class="cities" id="cities"></div>
+  </section>
+
+  <footer>매일 오전 9시 자동 업데이트 · 가격은 Google 항공편 기준 왕복 1인 요금</footer>
+</div>
+
+<script id="data" type="application/json">{"updated": "2026-11-06 14:59", "groups": [{"name": "일본", "flag": "🇯🇵"}, {"name": "런던", "flag": "🇬🇧"}, {"name": "애틀랜타", "flag": "🇺🇸"}, {"name": "미국·에어프레미아", "flag": "🇺🇸"}], "records": {"런던/런던": {"price": 1196302, "airport": "LHR", "airline": "심천항공", "stops": 1, "dest": "런던", "flag": "🇬🇧", "out": "2026-11-07", "ret": "2026-11-17", "link": "https://www.google.com/travel/flights?hl=ko&gl=kr&curr=KRW&tfs=CBwQAhpCEgoyMDI2LTExLTA3agcIARIDSUNOagcIARIDR01QcgcIARIDTEhScgcIARIDTEdXcgcIARIDU1ROcgcIARIDTENZGkISCjIwMjYtMTEtMTdqBwgBEgNMSFJqBwgBEgNMR1dqBwgBEgNTVE5qBwgBEgNMQ1lyBwgBEgNJQ05yBwgBEgNHTVBAAUgBcAGYAQE&tfu=EgIIAQ", "found_at": "2026-11-06T14:14", "prev": 1386782}, "애틀랜타/애틀랜타": {"price": 2122700, "airport": "ATL", "airline": "아메리칸항공", "stops": 1, "dest": "애틀랜타", "flag": "🇺🇸", "out": "2026-11-07", "ret": "2026-11-17", "link": "https://www.google.com/travel/flights?hl=ko&gl=kr&curr=KRW&tfs=CBwQAhonEgoyMDI2LTExLTA3agcIARIDSUNOagcIARIDR01QcgcIARIDQVRMGicSCjIwMjYtMTEtMTdqBwgBEgNBVExyBwgBEgNJQ05yBwgBEgNHTVBAAUgBcAGYAQE&tfu=EgIIAQ", "found_at": "2026-11-06T14:14", "prev": 2130900}, "일본/후쿠오카": {"price": 294200, "airport": "FUK", "airline": "에어서울", "stops": 0, "dest": "후쿠오카", "flag": "🇯🇵", "out": "2026-11-07", "ret": "2026-11-10", "link": "https://www.google.com/travel/flights?hl=ko&gl=kr&curr=KRW&tfs=CBwQAhpdEgoyMDI2LTExLTA3agcIARIDSUNOagcIARIDR01QcgcIARIDTlJUcgcIARIDSE5EcgcIARIDS0lYcgcIARIDRlVLcgcIARIDQ1RTcgcIARIDT0tBcgcIARIDTkdPGl0SCjIwMjYtMTEtMTBqBwgBEgNOUlRqBwgBEgNITkRqBwgBEgNLSVhqBwgBEgNGVUtqBwgBEgNDVFNqBwgBEgNPS0FqBwgBEgNOR09yBwgBEgNJQ05yBwgBEgNHTVBAAUgBcAGYAQE&tfu=EgIIAQ", "found_at": "2026-11-06T14:14", "prev": 339200}, "일본/오키나와": {"price": 358031, "airport": "", "airline": "제주항공", "stops": 0, "dest": "오키나와", "flag": "🇯🇵", "out": "2026-11-07", "ret": "2026-11-09", "link": "", "found_at": "2026-11-06T14:20"}, "일본/다카마쓰": {"price": 374500, "airport": "", "airline": "에어서울", "stops": 0, "dest": "다카마쓰", "flag": "🇯🇵", "out": "2026-11-07", "ret": "2026-11-09", "link": "", "found_at": "2026-11-06T14:20"}, "일본/도쿄": {"price": 345630, "airport": "NRT", "airline": "에어서울", "stops": 0, "dest": "도쿄", "flag": "🇯🇵", "out": "2026-11-07", "ret": "2026-11-10", "link": "https://www.google.com/travel/flights?hl=ko&gl=kr&curr=KRW&tfs=CBwQAhpdEgoyMDI2LTExLTA3agcIARIDSUNOagcIARIDR01QcgcIARIDTlJUcgcIARIDSE5EcgcIARIDS0lYcgcIARIDRlVLcgcIARIDQ1RTcgcIARIDT0tBcgcIARIDTkdPGl0SCjIwMjYtMTEtMTBqBwgBEgNOUlRqBwgBEgNITkRqBwgBEgNLSVhqBwgBEgNGVUtqBwgBEgNDVFNqBwgBEgNPS0FqBwgBEgNOR09yBwgBEgNJQ05yBwgBEgNHTVBAAUgBcAGYAQE&tfu=EgIIAQ", "found_at": "2026-11-06T14:14", "prev": 385116}, "일본/오사카": {"price": 309500, "airport": "KIX", "airline": "제주항공", "stops": 0, "dest": "오사카", "flag": "🇯🇵", "out": "2026-11-07", "ret": "2026-11-10", "link": "https://www.google.com/travel/flights?hl=ko&gl=kr&curr=KRW&tfs=CBwQAhpdEgoyMDI2LTExLTA3agcIARIDSUNOagcIARIDR01QcgcIARIDTlJUcgcIARIDSE5EcgcIARIDS0lYcgcIARIDRlVLcgcIARIDQ1RTcgcIARIDT0tBcgcIARIDTkdPGl0SCjIwMjYtMTEtMTBqBwgBEgNOUlRqBwgBEgNITkRqBwgBEgNLSVhqBwgBEgNGVUtqBwgBEgNDVFNqBwgBEgNPS0FqBwgBEgNOR09yBwgBEgNJQ05yBwgBEgNHTVBAAUgBcAGYAQE&tfu=EgIIAQ", "found_at": "2026-11-06T14:14", "prev": 406431}, "일본/삿포로": {"price": 410141, "airport": "", "airline": "제주항공", "stops": 0, "dest": "삿포로", "flag": "🇯🇵", "out": "2026-11-07", "ret": "2026-11-09", "link": "", "found_at": "2026-11-06T14:20"}, "일본/오이타": {"price": 433000, "airport": "", "airline": "제주항공", "stops": 0, "dest": "오이타", "flag": "🇯🇵", "out": "2026-11-07", "ret": "2026-11-09", "link": "", "found_at": "2026-11-06T14:20"}, "일본/나고야": {"price": 494910, "airport": "NGO", "airline": "피치항공", "stops": 0, "dest": "나고야", "flag": "🇯🇵", "out": "2026-11-07", "ret": "2026-11-10", "link": "https://www.google.com/travel/flights?hl=ko&gl=kr&curr=KRW&tfs=CBwQAhpdEgoyMDI2LTExLTA3agcIARIDSUNOagcIARIDR01QcgcIARIDTlJUcgcIARIDSE5EcgcIARIDS0lYcgcIARIDRlVLcgcIARIDQ1RTcgcIARIDT0tBcgcIARIDTkdPGl0SCjIwMjYtMTEtMTBqBwgBEgNOUlRqBwgBEgNITkRqBwgBEgNLSVhqBwgBEgNGVUtqBwgBEgNDVFNqBwgBEgNPS0FqBwgBEgNOR09yBwgBEgNJQ05yBwgBEgNHTVBAAUgBcAGYAQE&tfu=EgIIAQ", "found_at": "2026-11-06T14:14", "prev": 501600}, "일본/시즈오카": {"price": 522900, "airport": "", "airline": "제주항공", "stops": 0, "dest": "시즈오카", "flag": "🇯🇵", "out": "2026-11-07", "ret": "2026-11-09", "link": "", "found_at": "2026-11-06T14:20"}, "일본/마쓰야마": {"price": 450700, "airport": "MYJ", "airline": "제주항공", "stops": 0, "dest": "마쓰야마", "flag": "🇯🇵", "out": "2026-11-07", "ret": "2026-11-10", "link": "https://www.google.com/travel/flights?hl=ko&gl=kr&curr=KRW&tfs=CBwQAhpdEgoyMDI2LTExLTA3agcIARIDSUNOagcIARIDR01QcgcIARIDS0tKcgcIARIDS01KcgcIARIDS09KcgcIARIDT0lUcgcIARIDS01JcgcIARIDSFNHcgcIARIDTVlKGl0SCjIwMjYtMTEtMTBqBwgBEgNLS0pqBwgBEgNLTUpqBwgBEgNLT0pqBwgBEgNPSVRqBwgBEgNLTUlqBwgBEgNIU0dqBwgBEgNNWUpyBwgBEgNJQ05yBwgBEgNHTVBAAUgBcAGYAQE&tfu=EgIIAQ", "found_at": "2026-11-06T14:14", "prev": 526200}, "일본/히로시마": {"price": 558200, "airport": "", "airline": "제주항공", "stops": 0, "dest": "히로시마", "flag": "🇯🇵", "out": "2026-11-07", "ret": "2026-11-09", "link": "", "found_at": "2026-11-06T14:20"}, "일본/가고시마": {"price": 480200, "airport": "KOJ", "airline": "대한항공", "stops": 0, "dest": "가고시마", "flag": "🇯🇵", "out": "2026-11-07", "ret": "2026-11-10", "link": "https://www.google.com/travel/flights?hl=ko&gl=kr&curr=KRW&tfs=CBwQAhpdEgoyMDI2LTExLTA3agcIARIDSUNOagcIARIDR01QcgcIARIDS0tKcgcIARIDS01KcgcIARIDS09KcgcIARIDT0lUcgcIARIDS01JcgcIARIDSFNHcgcIARIDTVlKGl0SCjIwMjYtMTEtMTBqBwgBEgNLS0pqBwgBEgNLTUpqBwgBEgNLT0pqBwgBEgNPSVRqBwgBEgNLTUlqBwgBEgNIU0dqBwgBEgNNWUpyBwgBEgNJQ05yBwgBEgNHTVBAAUgBcAGYAQE&tfu=EgIIAQ", "found_at": "2026-11-06T14:14", "prev": 582700}, "일본/구마모토": {"price": 432500, "airport": "KMJ", "airline": "Trinity Airways", "stops": 0, "dest": "구마모토", "flag": "🇯🇵", "out": "2026-11-07", "ret": "2026-11-10", "link": "https://www.google.com/travel/flights?hl=ko&gl=kr&curr=KRW&tfs=CBwQAhpdEgoyMDI2LTExLTA3agcIARIDSUNOagcIARIDR01QcgcIARIDS0tKcgcIARIDS01KcgcIARIDS09KcgcIARIDT0lUcgcIARIDS01JcgcIARIDSFNHcgcIARIDTVlKGl0SCjIwMjYtMTEtMTBqBwgBEgNLS0pqBwgBEgNLTUpqBwgBEgNLT0pqBwgBEgNPSVRqBwgBEgNLTUlqBwgBEgNIU0dqBwgBEgNNWUpyBwgBEgNJQ05yBwgBEgNHTVBAAUgBcAGYAQE&tfu=EgIIAQ", "found_at": "2026-11-06T14:14", "prev": 602500}, "일본/고마쓰": {"price": 705200, "airport": "", "airline": "대한항공", "stops": 0, "dest": "고마쓰", "flag": "🇯🇵", "out": "2026-11-07", "ret": "2026-11-09", "link": "", "found_at": "2026-11-06T14:20"}, "일본/요나고": {"price": 716200, "airport": "", "airline": "아시아나항공", "stops": 1, "dest": "요나고", "flag": "🇯🇵", "out": "2026-11-07", "ret": "2026-11-09", "link": "", "found_at": "2026-11-06T14:20"}, "일본/니가타": {"price": 771900, "airport": "", "airline": "대한항공", "stops": 0, "dest": "니가타", "flag": "🇯🇵", "out": "2026-11-07", "ret": "2026-11-09", "link": "", "found_at": "2026-11-06T14:20"}, "일본/센다이": {"price": 819400, "airport": "", "airline": "아시아나항공", "stops": 0, "dest": "센다이", "flag": "🇯🇵", "out": "2026-11-07", "ret": "2026-11-09", "link": "", "found_at": "2026-11-06T14:20"}, "일본/오카야마": {"price": 848000, "airport": "", "airline": "대한항공", "stops": 0, "dest": "오카야마", "flag": "🇯🇵", "out": "2026-11-07", "ret": "2026-11-09", "link": "", "found_at": "2026-11-06T14:20"}, "일본/미야자키": {"price": 711000, "airport": "KMI", "airline": "전일본공수", "stops": 1, "dest": "미야자키", "flag": "🇯🇵", "out": "2026-11-07", "ret": "2026-11-10", "link": "https://www.google.com/travel/flights?hl=ko&gl=kr&curr=KRW&tfs=CBwQAhpdEgoyMDI2LTExLTA3agcIARIDSUNOagcIARIDR01QcgcIARIDS0tKcgcIARIDS01KcgcIARIDS09KcgcIARIDT0lUcgcIARIDS01JcgcIARIDSFNHcgcIARIDTVlKGl0SCjIwMjYtMTEtMTBqBwgBEgNLS0pqBwgBEgNLTUpqBwgBEgNLT0pqBwgBEgNPSVRqBwgBEgNLTUlqBwgBEgNIU0dqBwgBEgNNWUpyBwgBEgNJQ05yBwgBEgNHTVBAAUgBcAGYAQE&tfu=EgIIAQ", "found_at": "2026-11-06T14:14", "prev": 851500}, "일본/아오모리": {"price": 856200, "airport": "", "airline": "대한항공", "stops": 0, "dest": "아오모리", "flag": "🇯🇵", "out": "2026-11-07", "ret": "2026-11-09", "link": "", "found_at": "2026-11-06T14:20"}, "일본/기타큐슈": {"price": 340900, "airport": "KKJ", "airline": "진에어", "stops": 0, "dest": "기타큐슈", "flag": "🇯🇵", "out": "2026-11-07", "ret": "2026-11-10", "link": "https://www.google.com/travel/flights?hl=ko&gl=kr&curr=KRW&tfs=CBwQAhpdEgoyMDI2LTExLTA3agcIARIDSUNOagcIARIDR01QcgcIARIDS0tKcgcIARIDS01KcgcIARIDS09KcgcIARIDT0lUcgcIARIDS01JcgcIARIDSFNHcgcIARIDTVlKGl0SCjIwMjYtMTEtMTBqBwgBEgNLS0pqBwgBEgNLTUpqBwgBEgNLT0pqBwgBEgNPSVRqBwgBEgNLTUlqBwgBEgNIU0dqBwgBEgNNWUpyBwgBEgNJQ05yBwgBEgNHTVBAAUgBcAGYAQE&tfu=EgIIAQ", "found_at": "2026-11-06T14:14"}, "미국·에어프레미아/샌프란시스코": {"price": 1222000, "airport": "SFO", "airline": "에어프레미아", "stops": 0, "dest": "샌프란시스코", "flag": "🇺🇸", "out": "2026-11-07", "ret": "2026-11-14", "link": "https://www.google.com/travel/flights?hl=ko&gl=kr&curr=KRW&tfs=CBwQAho9EgoyMDI2LTExLTA3MgJZUGoHCAESA0lDTmoHCAESA0dNUHIHCAESA1NGT3IHCAESA0VXUnIHCAESA0xBWBo9EgoyMDI2LTExLTE0MgJZUGoHCAESA1NGT2oHCAESA0VXUmoHCAESA0xBWHIHCAESA0lDTnIHCAESA0dNUEABSAFwAZgBAQ&tfu=EgIIAQ", "found_at": "2026-11-06T14:28"}, "미국·에어프레미아/LA": {"price": 1542000, "airport": "LAX", "airline": "에어프레미아", "stops": 0, "dest": "LA", "flag": "🇺🇸", "out": "2026-11-07", "ret": "2026-11-14", "link": "https://www.google.com/travel/flights?hl=ko&gl=kr&curr=KRW&tfs=CBwQAho9EgoyMDI2LTExLTA3MgJZUGoHCAESA0lDTmoHCAESA0dNUHIHCAESA1NGT3IHCAESA0VXUnIHCAESA0xBWBo9EgoyMDI2LTExLTE0MgJZUGoHCAESA1NGT2oHCAESA0VXUmoHCAESA0xBWHIHCAESA0lDTnIHCAESA0dNUEABSAFwAZgBAQ&tfu=EgIIAQ", "found_at": "2026-11-06T14:28"}, "미국·에어프레미아/뉴욕": {"price": 1624400, "airport": "EWR", "airline": "에어프레미아", "stops": 0, "dest": "뉴욕", "flag": "🇺🇸", "out": "2026-11-07", "ret": "2026-11-14", "link": "https://www.google.com/travel/flights?hl=ko&gl=kr&curr=KRW&tfs=CBwQAho9EgoyMDI2LTExLTA3MgJZUGoHCAESA0lDTmoHCAESA0dNUHIHCAESA1NGT3IHCAESA0VXUnIHCAESA0xBWBo9EgoyMDI2LTExLTE0MgJZUGoHCAESA1NGT2oHCAESA0VXUmoHCAESA0xBWHIHCAESA0lDTnIHCAESA0dNUEABSAFwAZgBAQ&tfu=EgIIAQ", "found_at": "2026-11-06T14:28"}}, "history": [{"price": 1386782, "airport": "LHR", "airline": "", "stops": 1, "out": "2026-11-07", "ret": "2026-11-14", "link": "", "found_at": "2026-11-06T13:50", "route": "런던", "dest": "런던"}, {"price": 1196302, "airport": "LHR", "airline": "심천항공", "stops": 1, "out": "2026-11-07", "ret": "2026-11-17", "link": "https://www.google.com/travel/flights?hl=ko&gl=kr&curr=KRW&tfs=CBwQAhpCEgoyMDI2LTExLTA3agcIARIDSUNOagcIARIDR01QcgcIARIDTEhScgcIARIDTEdXcgcIARIDU1ROcgcIARIDTENZGkISCjIwMjYtMTEtMTdqBwgBEgNMSFJqBwgBEgNMR1dqBwgBEgNTVE5qBwgBEgNMQ1lyBwgBEgNJQ05yBwgBEgNHTVBAAUgBcAGYAQE&tfu=EgIIAQ", "found_at": "2026-11-06T14:14", "route": "런던", "dest": "런던"}, {"price": 2130900, "airport": "ATL", "airline": "", "stops": 1, "out": "2026-11-07", "ret": "2026-11-14", "link": "", "found_at": "2026-11-06T13:50", "route": "애틀랜타", "dest": "애틀랜타"}, {"price": 2122700, "airport": "ATL", "airline": "아메리칸항공", "stops": 1, "out": "2026-11-07", "ret": "2026-11-17", "link": "https://www.google.com/travel/flights?hl=ko&gl=kr&curr=KRW&tfs=CBwQAhonEgoyMDI2LTExLTA3agcIARIDSUNOagcIARIDR01QcgcIARIDQVRMGicSCjIwMjYtMTEtMTdqBwgBEgNBVExyBwgBEgNJQ05yBwgBEgNHTVBAAUgBcAGYAQE&tfu=EgIIAQ", "found_at": "2026-11-06T14:14", "route": "애틀랜타", "dest": "애틀랜타"}, {"price": 339200, "airport": "FUK", "airline": "", "stops": 0, "out": "2026-11-07", "ret": "2026-11-09", "link": "", "found_at": "2026-11-06T13:50", "route": "일본", "dest": "후쿠오카"}, {"price": 294200, "airport": "FUK", "airline": "에어서울", "stops": 0, "out": "2026-11-07", "ret": "2026-11-10", "link": "https://www.google.com/travel/flights?hl=ko&gl=kr&curr=KRW&tfs=CBwQAhpdEgoyMDI2LTExLTA3agcIARIDSUNOagcIARIDR01QcgcIARIDTlJUcgcIARIDSE5EcgcIARIDS0lYcgcIARIDRlVLcgcIARIDQ1RTcgcIARIDT0tBcgcIARIDTkdPGl0SCjIwMjYtMTEtMTBqBwgBEgNOUlRqBwgBEgNITkRqBwgBEgNLSVhqBwgBEgNGVUtqBwgBEgNDVFNqBwgBEgNPS0FqBwgBEgNOR09yBwgBEgNJQ05yBwgBEgNHTVBAAUgBcAGYAQE&tfu=EgIIAQ", "found_at": "2026-11-06T14:14", "route": "일본", "dest": "후쿠오카"}, {"price": 358031, "airport": "", "airline": "제주항공", "stops": 0, "out": "2026-11-07", "ret": "2026-11-09", "link": "", "found_at": "2026-11-06T14:20", "route": "일본", "dest": "오키나와"}, {"price": 374500, "airport": "", "airline": "에어서울", "stops": 0, "out": "2026-11-07", "ret": "2026-11-09", "link": "", "found_at": "2026-11-06T14:20", "route": "일본", "dest": "다카마쓰"}, {"price": 385116, "airport": "NRT", "airline": "", "stops": 0, "out": "2026-11-07", "ret": "2026-11-09", "link": "", "found_at": "2026-11-06T13:50", "route": "일본", "dest": "도쿄"}, {"price": 345630, "airport": "NRT", "airline": "에어서울", "stops": 0, "out": "2026-11-07", "ret": "2026-11-10", "link": "https://www.google.com/travel/flights?hl=ko&gl=kr&curr=KRW&tfs=CBwQAhpdEgoyMDI2LTExLTA3agcIARIDSUNOagcIARIDR01QcgcIARIDTlJUcgcIARIDSE5EcgcIARIDS0lYcgcIARIDRlVLcgcIARIDQ1RTcgcIARIDT0tBcgcIARIDTkdPGl0SCjIwMjYtMTEtMTBqBwgBEgNOUlRqBwgBEgNITkRqBwgBEgNLSVhqBwgBEgNGVUtqBwgBEgNDVFNqBwgBEgNPS0FqBwgBEgNOR09yBwgBEgNJQ05yBwgBEgNHTVBAAUgBcAGYAQE&tfu=EgIIAQ", "found_at": "2026-11-06T14:14", "route": "일본", "dest": "도쿄"}, {"price": 406431, "airport": "KIX", "airline": "", "stops": 0, "out": "2026-11-07", "ret": "2026-11-09", "link": "", "found_at": "2026-11-06T13:50", "route": "일본", "dest": "오사카"}, {"price": 309500, "airport": "KIX", "airline": "제주항공", "stops": 0, "out": "2026-11-07", "ret": "2026-11-10", "link": "https://www.google.com/travel/flights?hl=ko&gl=kr&curr=KRW&tfs=CBwQAhpdEgoyMDI2LTExLTA3agcIARIDSUNOagcIARIDR01QcgcIARIDTlJUcgcIARIDSE5EcgcIARIDS0lYcgcIARIDRlVLcgcIARIDQ1RTcgcIARIDT0tBcgcIARIDTkdPGl0SCjIwMjYtMTEtMTBqBwgBEgNOUlRqBwgBEgNITkRqBwgBEgNLSVhqBwgBEgNGVUtqBwgBEgNDVFNqBwgBEgNPS0FqBwgBEgNOR09yBwgBEgNJQ05yBwgBEgNHTVBAAUgBcAGYAQE&tfu=EgIIAQ", "found_at": "2026-11-06T14:14", "route": "일본", "dest": "오사카"}, {"price": 410141, "airport": "", "airline": "제주항공", "stops": 0, "out": "2026-11-07", "ret": "2026-11-09", "link": "", "found_at": "2026-11-06T14:20", "route": "일본", "dest": "삿포로"}, {"price": 433000, "airport": "", "airline": "제주항공", "stops": 0, "out": "2026-11-07", "ret": "2026-11-09", "link": "", "found_at": "2026-11-06T14:20", "route": "일본", "dest": "오이타"}, {"price": 501600, "airport": "NGO", "airline": "", "stops": 0, "out": "2026-11-07", "ret": "2026-11-09", "link": "", "found_at": "2026-11-06T13:50", "route": "일본", "dest": "나고야"}, {"price": 494910, "airport": "NGO", "airline": "피치항공", "stops": 0, "out": "2026-11-07", "ret": "2026-11-10", "link": "https://www.google.com/travel/flights?hl=ko&gl=kr&curr=KRW&tfs=CBwQAhpdEgoyMDI2LTExLTA3agcIARIDSUNOagcIARIDR01QcgcIARIDTlJUcgcIARIDSE5EcgcIARIDS0lYcgcIARIDRlVLcgcIARIDQ1RTcgcIARIDT0tBcgcIARIDTkdPGl0SCjIwMjYtMTEtMTBqBwgBEgNOUlRqBwgBEgNITkRqBwgBEgNLSVhqBwgBEgNGVUtqBwgBEgNDVFNqBwgBEgNPS0FqBwgBEgNOR09yBwgBEgNJQ05yBwgBEgNHTVBAAUgBcAGYAQE&tfu=EgIIAQ", "found_at": "2026-11-06T14:14", "route": "일본", "dest": "나고야"}, {"price": 522900, "airport": "", "airline": "제주항공", "stops": 0, "out": "2026-11-07", "ret": "2026-11-09", "link": "", "found_at": "2026-11-06T14:20", "route": "일본", "dest": "시즈오카"}, {"price": 526200, "airport": "MYJ", "airline": "", "stops": 0, "out": "2026-11-07", "ret": "2026-11-09", "link": "", "found_at": "2026-11-06T13:50", "route": "일본", "dest": "마쓰야마"}, {"price": 450700, "airport": "MYJ", "airline": "제주항공", "stops": 0, "out": "2026-11-07", "ret": "2026-11-10", "link": "https://www.google.com/travel/flights?hl=ko&gl=kr&curr=KRW&tfs=CBwQAhpdEgoyMDI2LTExLTA3agcIARIDSUNOagcIARIDR01QcgcIARIDS0tKcgcIARIDS01KcgcIARIDS09KcgcIARIDT0lUcgcIARIDS01JcgcIARIDSFNHcgcIARIDTVlKGl0SCjIwMjYtMTEtMTBqBwgBEgNLS0pqBwgBEgNLTUpqBwgBEgNLT0pqBwgBEgNPSVRqBwgBEgNLTUlqBwgBEgNIU0dqBwgBEgNNWUpyBwgBEgNJQ05yBwgBEgNHTVBAAUgBcAGYAQE&tfu=EgIIAQ", "found_at": "2026-11-06T14:14", "route": "일본", "dest": "마쓰야마"}, {"price": 558200, "airport": "", "airline": "제주항공", "stops": 0, "out": "2026-11-07", "ret": "2026-11-09", "link": "", "found_at": "2026-11-06T14:20", "route": "일본", "dest": "히로시마"}, {"price": 582700, "airport": "KOJ", "airline": "", "stops": 0, "out": "2026-11-07", "ret": "2026-11-09", "link": "", "found_at": "2026-11-06T13:50", "route": "일본", "dest": "가고시마"}, {"price": 480200, "airport": "KOJ", "airline": "대한항공", "stops": 0, "out": "2026-11-07", "ret": "2026-11-10", "link": "https://www.google.com/travel/flights?hl=ko&gl=kr&curr=KRW&tfs=CBwQAhpdEgoyMDI2LTExLTA3agcIARIDSUNOagcIARIDR01QcgcIARIDS0tKcgcIARIDS01KcgcIARIDS09KcgcIARIDT0lUcgcIARIDS01JcgcIARIDSFNHcgcIARIDTVlKGl0SCjIwMjYtMTEtMTBqBwgBEgNLS0pqBwgBEgNLTUpqBwgBEgNLT0pqBwgBEgNPSVRqBwgBEgNLTUlqBwgBEgNIU0dqBwgBEgNNWUpyBwgBEgNJQ05yBwgBEgNHTVBAAUgBcAGYAQE&tfu=EgIIAQ", "found_at": "2026-11-06T14:14", "route": "일본", "dest": "가고시마"}, {"price": 602500, "airport": "KMJ", "airline": "", "stops": 0, "out": "2026-11-07", "ret": "2026-11-09", "link": "", "found_at": "2026-11-06T13:50", "route": "일본", "dest": "구마모토"}, {"price": 432500, "airport": "KMJ", "airline": "Trinity Airways", "stops": 0, "out": "2026-11-07", "ret": "2026-11-10", "link": "https://www.google.com/travel/flights?hl=ko&gl=kr&curr=KRW&tfs=CBwQAhpdEgoyMDI2LTExLTA3agcIARIDSUNOagcIARIDR01QcgcIARIDS0tKcgcIARIDS01KcgcIARIDS09KcgcIARIDT0lUcgcIARIDS01JcgcIARIDSFNHcgcIARIDTVlKGl0SCjIwMjYtMTEtMTBqBwgBEgNLS0pqBwgBEgNLTUpqBwgBEgNLT0pqBwgBEgNPSVRqBwgBEgNLTUlqBwgBEgNIU0dqBwgBEgNNWUpyBwgBEgNJQ05yBwgBEgNHTVBAAUgBcAGYAQE&tfu=EgIIAQ", "found_at": "2026-11-06T14:14", "route": "일본", "dest": "구마모토"}, {"price": 705200, "airport": "", "airline": "대한항공", "stops": 0, "out": "2026-11-07", "ret": "2026-11-09", "link": "", "found_at": "2026-11-06T14:20", "route": "일본", "dest": "고마쓰"}, {"price": 716200, "airport": "", "airline": "아시아나항공", "stops": 1, "out": "2026-11-07", "ret": "2026-11-09", "link": "", "found_at": "2026-11-06T14:20", "route": "일본", "dest": "요나고"}, {"price": 771900, "airport": "", "airline": "대한항공", "stops": 0, "out": "2026-11-07", "ret": "2026-11-09", "link": "", "found_at": "2026-11-06T14:20", "route": "일본", "dest": "니가타"}, {"price": 819400, "airport": "", "airline": "아시아나항공", "stops": 0, "out": "2026-11-07", "ret": "2026-11-09", "link": "", "found_at": "2026-11-06T14:20", "route": "일본", "dest": "센다이"}, {"price": 848000, "airport": "", "airline": "대한항공", "stops": 0, "out": "2026-11-07", "ret": "2026-11-09", "link": "", "found_at": "2026-11-06T14:20", "route": "일본", "dest": "오카야마"}, {"price": 851500, "airport": "KMI", "airline": "", "stops": 1, "out": "2026-11-07", "ret": "2026-11-09", "link": "", "found_at": "2026-11-06T13:50", "route": "일본", "dest": "미야자키"}, {"price": 711000, "airport": "KMI", "airline": "전일본공수", "stops": 1, "out": "2026-11-07", "ret": "2026-11-10", "link": "https://www.google.com/travel/flights?hl=ko&gl=kr&curr=KRW&tfs=CBwQAhpdEgoyMDI2LTExLTA3agcIARIDSUNOagcIARIDR01QcgcIARIDS0tKcgcIARIDS01KcgcIARIDS09KcgcIARIDT0lUcgcIARIDS01JcgcIARIDSFNHcgcIARIDTVlKGl0SCjIwMjYtMTEtMTBqBwgBEgNLS0pqBwgBEgNLTUpqBwgBEgNLT0pqBwgBEgNPSVRqBwgBEgNLTUlqBwgBEgNIU0dqBwgBEgNNWUpyBwgBEgNJQ05yBwgBEgNHTVBAAUgBcAGYAQE&tfu=EgIIAQ", "found_at": "2026-11-06T14:14", "route": "일본", "dest": "미야자키"}, {"price": 856200, "airport": "", "airline": "대한항공", "stops": 0, "out": "2026-11-07", "ret": "2026-11-09", "link": "", "found_at": "2026-11-06T14:20", "route": "일본", "dest": "아오모리"}, {"price": 340900, "airport": "KKJ", "airline": "진에어", "stops": 0, "out": "2026-11-07", "ret": "2026-11-10", "link": "https://www.google.com/travel/flights?hl=ko&gl=kr&curr=KRW&tfs=CBwQAhpdEgoyMDI2LTExLTA3agcIARIDSUNOagcIARIDR01QcgcIARIDS0tKcgcIARIDS01KcgcIARIDS09KcgcIARIDT0lUcgcIARIDS01JcgcIARIDSFNHcgcIARIDTVlKGl0SCjIwMjYtMTEtMTBqBwgBEgNLS0pqBwgBEgNLTUpqBwgBEgNLT0pqBwgBEgNPSVRqBwgBEgNLTUlqBwgBEgNIU0dqBwgBEgNNWUpyBwgBEgNJQ05yBwgBEgNHTVBAAUgBcAGYAQE&tfu=EgIIAQ", "found_at": "2026-11-06T14:14", "route": "일본", "dest": "기타큐슈"}, {"price": 1222000, "airport": "SFO", "airline": "에어프레미아", "stops": 0, "route": "미국·에어프레미아", "dest": "샌프란시스코", "out": "2026-11-07", "ret": "2026-11-14", "link": "https://www.google.com/travel/flights?hl=ko&gl=kr&curr=KRW&tfs=CBwQAho9EgoyMDI2LTExLTA3MgJZUGoHCAESA0lDTmoHCAESA0dNUHIHCAESA1NGT3IHCAESA0VXUnIHCAESA0xBWBo9EgoyMDI2LTExLTE0MgJZUGoHCAESA1NGT2oHCAESA0VXUmoHCAESA0xBWHIHCAESA0lDTnIHCAESA0dNUEABSAFwAZgBAQ&tfu=EgIIAQ", "found_at": "2026-11-06T14:28"}, {"price": 1542000, "airport": "LAX", "airline": "에어프레미아", "stops": 0, "route": "미국·에어프레미아", "dest": "LA", "out": "2026-11-07", "ret": "2026-11-14", "link": "https://www.google.com/travel/flights?hl=ko&gl=kr&curr=KRW&tfs=CBwQAho9EgoyMDI2LTExLTA3MgJZUGoHCAESA0lDTmoHCAESA0dNUHIHCAESA1NGT3IHCAESA0VXUnIHCAESA0xBWBo9EgoyMDI2LTExLTE0MgJZUGoHCAESA1NGT2oHCAESA0VXUmoHCAESA0xBWHIHCAESA0lDTnIHCAESA0dNUEABSAFwAZgBAQ&tfu=EgIIAQ", "found_at": "2026-11-06T14:28"}, {"price": 1624400, "airport": "EWR", "airline": "에어프레미아", "stops": 0, "route": "미국·에어프레미아", "dest": "뉴욕", "out": "2026-11-07", "ret": "2026-11-14", "link": "https://www.google.com/travel/flights?hl=ko&gl=kr&curr=KRW&tfs=CBwQAho9EgoyMDI2LTExLTA3MgJZUGoHCAESA0lDTmoHCAESA0dNUHIHCAESA1NGT3IHCAESA0VXUnIHCAESA0xBWBo9EgoyMDI2LTExLTE0MgJZUGoHCAESA1NGT2oHCAESA0VXUmoHCAESA0xBWHIHCAESA0lDTnIHCAESA0dNUEABSAFwAZgBAQ&tfu=EgIIAQ", "found_at": "2026-11-06T14:28"}]}</script>
+<script>
+const D = JSON.parse(document.getElementById('data').textContent);
+const PALETTE = {
+  '일본':            { p: ['#ffd9e0', '#ffe9dc'], a: ['#e8798f', '#efa07e'], ink: '#5b2433' },
+  '런던':            { p: ['#dce4ff', '#d8f1f3'], a: ['#7090e6', '#5fbfcb'], ink: '#1f2c5c' },
+  '애틀랜타':        { p: ['#ffe6d1', '#fff2cc'], a: ['#e5995a', '#dcb64c'], ink: '#5a3515' },
+  '미국·에어프레미아': { p: ['#d5f2ec', '#e4defd'], a: ['#4fb3a3', '#8e82df'], ink: '#173f3a' },
+};
+const FALLBACK = [
+  { p: ['#e8defd', '#fde0ef'], a: ['#9b87e0', '#e08bb4'], ink: '#33255c' },
+  { p: ['#d8eefd', '#dcf5e3'], a: ['#5aa6d8', '#5fbf86'], ink: '#173a52' },
+];
+const pal = (g, i) => PALETTE[g] || FALLBACK[i % FALLBACK.length];
+const colors = (g, i) => pal(g, i).a;
+const cardVars = (g, i) => { const x = pal(g, i); return `--p1:${x.p[0]};--p2:${x.p[1]};--a1:${x.a[0]};--ink:${x.ink}`; };
+const AIRPORT_HINT = { '도쿄': 'NRT·HND', '뉴욕': 'EWR' };
+
+const won = n => '₩' + Math.round(n).toLocaleString('ko-KR');
+const manwon = n => (n / 10000).toLocaleString('ko-KR', { maximumFractionDigits: 1 }) + '만';
+const WD = '일월화수목금토';
+const md = s => { const d = new Date(s + 'T00:00'); return (d.getMonth() + 1) + '/' + d.getDate() + '(' + WD[d.getDay()] + ')'; };
+const nights = (a, b) => Math.round((new Date(b) - new Date(a)) / 864e5);
+const stopTxt = s => s === 0 ? '직항' : (s == null ? '' : '경유 ' + s + '회');
+const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const $ = id => document.getElementById(id);
+
+// ----- 데이터 가공 -----
+const hist = D.history.slice().sort((a, b) => (a.found_at || '') < (b.found_at || '') ? -1 : 1);
+const byKey = {};
+for (const h of hist) (byKey[h.route + '/' + h.dest] ||= []).push(h);
+const groups = D.groups.map((g, i) => ({ ...g, colors: colors(g.name, i), vars: cardVars(g.name, i) }));
+const gColor = Object.fromEntries(groups.map(g => [g.name, g.colors]));
+
+function cityInfo(key) {
+  const r = D.records[key] || {};
+  const hs = byKey[key] || [];
+  const byOut = {};
+  for (const h of hs) if (!byOut[h.out] || h.price < byOut[h.out].price) byOut[h.out] = h;
+  const pts = Object.values(byOut).sort((a, b) => a.out < b.out ? -1 : 1);
+  const first = hs.length ? hs[0].price : r.price;
+  const drop = first && r.price ? (first - r.price) / first : 0;
+  const last = hs[hs.length - 1];
+  const fresh = last && r.found_at && last.found_at === r.found_at && r.prev;
+  return { key, r, hs, pts, first, drop, fresh, dest: r.dest || key.split('/')[1] };
+}
+function citiesOf(g) {
+  const ks = new Set(Object.keys(D.records).filter(k => k.startsWith(g + '/')));
+  for (const k in byKey) if (k.startsWith(g + '/')) ks.add(k);
+  return [...ks].map(cityInfo).filter(c => c.r.price).sort((a, b) => a.r.price - b.r.price);
+}
+
+// 최근 7일 사이 역대 최저 갱신 횟수
+let weekLows = 0;
+const weekAgo = Date.now() - 7 * 864e5;
+for (const k in byKey) {
+  let min = Infinity;
+  for (const h of byKey[k]) {
+    if (h.price < min) { if (min !== Infinity && new Date(h.found_at).getTime() > weekAgo) weekLows++; min = h.price; }
+  }
+}
+
+// ----- 상태 -----
+const SAVE = 'fareRadar';
+let st = {};
+try { st = JSON.parse(localStorage.getItem(SAVE) || '{}'); } catch (e) {}
+let group = groups.some(g => g.name === st.group) ? st.group : (groups[0] || {}).name;
+let sel = st.sel;
+const save = () => { try { localStorage.setItem(SAVE, JSON.stringify({ group, sel, theme: st.theme })); } catch (e) {} };
+if (st.theme) document.documentElement.dataset.theme = st.theme;
+$('themeBtn').onclick = () => {
+  const dark = matchMedia('(prefers-color-scheme: dark)').matches;
+  const cur = document.documentElement.dataset.theme || (dark ? 'dark' : 'light');
+  st.theme = cur === 'dark' ? 'light' : 'dark';
+  document.documentElement.dataset.theme = st.theme; save(); renderDetail();
+};
+
+// ----- 헤더 -----
+(function header() {
+  const up = new Date(D.updated.replace(' ', 'T'));
+  const mins = Math.round((Date.now() - up) / 60000);
+  const ago = mins < 1 ? '방금' : mins < 60 ? mins + '분 전' : mins < 1440 ? Math.round(mins / 60) + '시간 전' : Math.round(mins / 1440) + '일 전';
+  $('updated').innerHTML = ago + ' 업데이트<span class="long"> · 다음 확인 내일 09:00</span>';
+})();
+
+// ----- 히어로 -----
+function sparkPath(pts, w, h, pad) {
+  if (pts.length < 2) return '';
+  const ps = pts.map(p => p.price), lo = Math.min(...ps), hi = Math.max(...ps) || 1;
+  return pts.map((p, i) => {
+    const x = pad + i / (pts.length - 1) * (w - pad * 2);
+    const y = pad + (hi === lo ? .5 : 1 - (p.price - lo) / (hi - lo)) * (h - pad * 2);
+    return (i ? 'L' : 'M') + x.toFixed(1) + ' ' + y.toFixed(1);
+  }).join(' ');
+}
+function countUp(el, to, fmt) {
+  if (matchMedia('(prefers-reduced-motion: reduce)').matches) { el.textContent = fmt(to); return; }
+  const t0 = performance.now(), dur = 900;
+  const step = t => { const k = Math.min(1, (t - t0) / dur), e = 1 - Math.pow(1 - k, 3); el.textContent = fmt(to * e); if (k < 1) requestAnimationFrame(step); };
+  requestAnimationFrame(step);
+}
+
+const bests = groups.map(g => ({ g, list: citiesOf(g.name) })).filter(x => x.list.length);
+(function hero() {
+  // 노선 중 "처음 본 가격 대비 가장 많이 떨어진" 곳을 주인공으로, 없으면 가장 싼 곳
+  const all = bests.flatMap(x => x.list.map(c => ({ ...c, g: x.g })));
+  if (!all.length) { $('heroTitle').textContent = '첫 조회를 기다리는 중'; return; }
+  const star = all.slice().sort((a, b) => a.r.price - b.r.price)[0];
+  const c = star.g.colors;
+  document.documentElement.style.setProperty('--hero-grad', `linear-gradient(90deg, ${c[0]}, ${c[1]})`);
+  $('heroTitle').innerHTML = `<span class="city">${esc(star.dest)}</span>, <span class="num" id="heroPrice"></span>`;
+  countUp($('heroPrice'), star.r.price, won);
+  $('heroLine').innerHTML = `${star.g.flag} ${md(star.r.out)} 출발 · <b>${nights(star.r.out, star.r.ret)}박 ${nights(star.r.out, star.r.ret) + 1}일</b> · ${esc(star.r.airline)} ${stopTxt(star.r.stops)}`;
+  const n = all.length;
+  const stats = [[n, '추적 중인 도시'], [D.history.length.toLocaleString(), '누적 가격 조회'], [weekLows, '이번 주 최저가 갱신']];
+  $('stats').innerHTML = stats.map(([v, l]) => `<div class="stat"><div class="v num">${v}</div><div class="l">${l}</div></div>`).join('');
+})();
+
+function renderDeals() {
+  $('deals').innerHTML = bests.map(({ g, list }) => {
+    const c = list[0];
+    const path = sparkPath(c.pts, 200, 60, 6);
+    const chip = c.drop > 0.005 ? `<span class="chip">▼ ${Math.round(c.drop * 100)}%</span>` : '';
+    return `<button class="deal ${g.name === group ? 'on' : ''}" data-g="${esc(g.name)}" style="${g.vars}">
+      ${chip}
+      <div><span class="flag">${g.flag}</span><span class="g">${esc(g.name)}</span></div>
+      <div class="c">${list.length > 1 ? '최저 · ' : ''}${esc(c.dest)}</div>
+      <div class="p num">${won(c.r.price)}</div>
+      <div class="d">${md(c.r.out)} → ${md(c.r.ret)}</div>
+      ${path ? `<svg viewBox="0 0 200 60" preserveAspectRatio="none"><path d="${path}" fill="none" stroke="var(--a1)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>` : ''}
+    </button>`;
+  }).join('');
+  for (const b of document.querySelectorAll('.deal')) b.onclick = () => { group = b.dataset.g; sel = null; save(); render(true); };
+}
+
+function renderTabs() {
+  $('tabs').innerHTML = groups.map(g => `<button class="tab ${g.name === group ? 'on' : ''}" data-g="${esc(g.name)}">${g.flag} ${esc(g.name)}<span class="cnt">${citiesOf(g.name).length}</span></button>`).join('');
+  for (const b of document.querySelectorAll('.tab')) b.onclick = () => { group = b.dataset.g; sel = null; save(); render(true); };
+}
+
+function renderCities(list) {
+  const c = gColor[group] || FALLBACK[0];
+  const box = $('cities');
+  box.style.setProperty('--c1', c[0]); box.style.setProperty('--c2', c[1]);
+  $('gridTitle').textContent = list.length > 1 ? `${list.length}개 도시 가격 순위` : '노선 정보';
+  $('gridHint').textContent = list.length > 1 ? '역대 최저가 기준 · 낮은 순' : '';
+  if (!list.length) { box.innerHTML = '<div class="empty" style="grid-column:1/-1">아직 조회 기록이 없어요. 다음 실행 후에 채워집니다.</div>'; return; }
+  box.innerHTML = list.map((x, i) => {
+    const path = sparkPath(x.pts, 200, 34, 3);
+    const badge = x.fresh ? '<span class="chip good">NEW LOW</span>' : `<span class="rank">#${i + 1}</span>`;
+    const code = AIRPORT_HINT[x.dest] || x.r.airport || '';
+    return `<button class="cc ${x.key === sel ? 'on' : ''} ${i === 0 && list.length > 1 ? 'top1' : ''}" data-k="${esc(x.key)}" style="--i:${i}">
+      ${badge}
+      <div><span class="name">${esc(x.dest)}</span><span class="code">${esc(code)}</span></div>
+      <div class="pr num">${won(x.r.price)}</div>
+      <div class="meta">${md(x.r.out)} · ${nights(x.r.out, x.r.ret)}박 · ${stopTxt(x.r.stops)}</div>
+      ${path ? `<svg viewBox="0 0 200 34" preserveAspectRatio="none"><path d="${path}" fill="none" stroke="${c[0]}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" opacity=".9"/></svg>` : '<svg viewBox="0 0 200 34"></svg>'}
+    </button>`;
+  }).join('');
+  for (const b of box.querySelectorAll('.cc')) b.onclick = () => { sel = b.dataset.k; save(); render(false); };
+}
+
+function renderDetail() {
+  const x = sel ? cityInfo(sel) : null;
+  const c = gColor[group] || FALLBACK[0];
+  const info = $('info');
+  info.style.setProperty('--c1', c[0]); info.style.setProperty('--c2', c[1]);
+  if (!x || !x.r.price) { $('chartTitle').textContent = ''; $('chart').innerHTML = '<div class="empty">조회 기록이 없어요</div>'; info.innerHTML = ''; $('chartChip').textContent = ''; return; }
+  const r = x.r;
+  $('chartTitle').textContent = `${x.dest} · ${x.pts.length}개 출발일`;
+  const chip = $('chartChip');
+  chip.textContent = x.drop > 0.005 ? `처음보다 ▼ ${Math.round(x.drop * 100)}%` : '';
+  chip.style.display = chip.textContent ? '' : 'none';
+
+  const n = nights(r.out, r.ret);
+  info.innerHTML = `
+    <div class="lbl">역대 최저가</div>
+    <div class="big num">${won(r.price)}</div>
+    ${r.prev ? `<div class="good" style="font-size:13px;font-weight:600">직전 최저 ${won(r.prev)}에서 ${won(r.prev - r.price)} 내림</div>` : '<div style="font-size:13px;color:var(--text-3)">첫 기록 가격</div>'}
+    <dl>
+      <dt>일정</dt><dd>${md(r.out)} → ${md(r.ret)}</dd>
+      <dt>기간</dt><dd>${n}박 ${n + 1}일</dd>
+      <dt>항공사</dt><dd>${esc(r.airline)}</dd>
+      <dt>경유</dt><dd>${stopTxt(r.stops)}</dd>
+      <dt>처음 본 가격</dt><dd class="num">${won(x.first)}</dd>
+      <dt>조회 횟수</dt><dd class="num">${x.hs.length}회</dd>
+    </dl>
+    <a class="cta ${r.link ? '' : 'off'}" href="${esc(r.link || '#')}" target="_blank" rel="noopener">Google 항공편에서 보기 ↗</a>`;
+
+  drawChart(x, c);
+}
+
+function drawChart(x, c) {
+  const box = $('chart');
+  const pts = x.pts;
+  if (!pts.length) { box.innerHTML = '<div class="empty">조회 기록이 없어요</div>'; return; }
+  const W = Math.max(box.clientWidth, 280), H = box.clientHeight || 280, L = 46, R = 12, T = 16, B = 28;
+  const t = s => new Date(s + 'T00:00').getTime();
+  let x0 = t(pts[0].out), x1 = t(pts[pts.length - 1].out);
+  if (x0 === x1) { x0 -= 4 * 864e5; x1 += 4 * 864e5; }
+  let lo = Math.min(...pts.map(p => p.price)), hi = Math.max(...pts.map(p => p.price));
+  const pad = Math.max((hi - lo) * 0.18, hi * 0.06); lo = Math.max(0, lo - pad); hi += pad;
+  const X = s => L + (t(s) - x0) / (x1 - x0) * (W - L - R);
+  const Y = v => T + (1 - (v - lo) / (hi - lo)) * (H - T - B);
+  const gid = 'g' + Math.random().toString(36).slice(2, 7);
+  let s = `<defs><linearGradient id="${gid}" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="${c[0]}" stop-opacity=".35"/><stop offset="1" stop-color="${c[0]}" stop-opacity="0"/></linearGradient>
+    <linearGradient id="${gid}l" x1="0" x2="1"><stop offset="0" stop-color="${c[0]}"/><stop offset="1" stop-color="${c[1]}"/></linearGradient></defs>`;
+  for (let i = 0; i <= 4; i++) {
+    const v = lo + (hi - lo) * i / 4, y = Y(v);
+    s += `<line class="grid" x1="${L}" x2="${W - R}" y1="${y}" y2="${y}"/><text class="axis num" x="${L - 8}" y="${y + 4}" text-anchor="end">${manwon(v)}</text>`;
+  }
+  const every = Math.ceil(pts.length / Math.max(1, Math.floor((W - L) / 64)));
+  pts.forEach((p, i) => { if (i % every === 0) s += `<text class="axis" x="${X(p.out)}" y="${H - 6}" text-anchor="middle">${md(p.out)}</text>`; });
+  const recY = Y(x.r.price);
+  s += `<line x1="${L}" x2="${W - R}" y1="${recY}" y2="${recY}" stroke="var(--good)" stroke-dasharray="3 5" stroke-width="1.2"/>`;
+  s += `<text x="${W - R}" y="${recY - 6}" text-anchor="end" fill="var(--good)" font-size="11" font-weight="700">역대 최저</text>`;
+  if (pts.length > 1) {
+    const line = pts.map((p, i) => (i ? 'L' : 'M') + X(p.out) + ' ' + Y(p.price)).join(' ');
+    s += `<path d="${line} L ${X(pts[pts.length - 1].out)} ${H - B} L ${X(pts[0].out)} ${H - B} Z" fill="url(#${gid})"/>`;
+    s += `<path class="draw" d="${line}" fill="none" stroke="url(#${gid}l)" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>`;
+  }
+  for (const p of pts) {
+    const best = p.price === x.r.price;
+    s += `<circle cx="${X(p.out)}" cy="${Y(p.price)}" r="${best ? 6 : 3.5}" fill="${best ? 'var(--good)' : c[0]}" stroke="var(--bg)" stroke-width="2"/>`;
+  }
+  s += `<line id="cross" x1="0" x2="0" y1="${T}" y2="${H - B}" stroke="var(--border-strong)" opacity="0"/>
+        <circle id="hot" r="7" fill="none" stroke="${c[0]}" stroke-width="2" opacity="0"/>`;
+  box.innerHTML = `<svg viewBox="0 0 ${W} ${H}">${s}</svg><div class="tip" id="tip"></div>`;
+
+  const path = box.querySelector('.draw');
+  if (path && !matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    const len = path.getTotalLength();
+    path.style.strokeDasharray = len; path.style.strokeDashoffset = len;
+    path.getBoundingClientRect();
+    path.style.transition = 'stroke-dashoffset .9s cubic-bezier(.2,.8,.2,1)'; path.style.strokeDashoffset = 0;
+  }
+  const svg = box.querySelector('svg'), tip = $('tip'), cross = $('cross'), hot = $('hot');
+  const move = ev => {
+    const rect = svg.getBoundingClientRect();
+    const mx = ((ev.touches ? ev.touches[0].clientX : ev.clientX) - rect.left) * W / rect.width;
+    let p = pts[0];
+    for (const q of pts) if (Math.abs(X(q.out) - mx) < Math.abs(X(p.out) - mx)) p = q;
+    const px = X(p.out), py = Y(p.price);
+    cross.setAttribute('x1', px); cross.setAttribute('x2', px); cross.setAttribute('opacity', 1);
+    hot.setAttribute('cx', px); hot.setAttribute('cy', py); hot.setAttribute('opacity', 1);
+    tip.innerHTML = `<b class="num">${won(p.price)}</b>${md(p.out)} → ${md(p.ret)} · ${nights(p.out, p.ret)}박<br><span style="color:var(--text-3)">${esc(p.airline)} ${stopTxt(p.stops)}</span>`;
+    tip.style.left = (px / W * rect.width) + 'px'; tip.style.top = (py / H * rect.height) + 'px';
+    tip.classList.add('show');
+  };
+  const leave = () => { tip.classList.remove('show'); cross.setAttribute('opacity', 0); hot.setAttribute('opacity', 0); };
+  svg.addEventListener('mousemove', move); svg.addEventListener('touchmove', move, { passive: true });
+  svg.addEventListener('mouseleave', leave); svg.addEventListener('touchend', leave);
+}
+
+function render(groupChanged) {
+  const list = citiesOf(group);
+  if (!list.some(x => x.key === sel)) sel = list[0] && list[0].key;
+  renderDeals(); renderTabs();
+  if (groupChanged !== false) renderCities(list);
+  else for (const b of document.querySelectorAll('.cc')) b.classList.toggle('on', b.dataset.k === sel);
+  renderDetail();
+}
+render(true);
+let rz; addEventListener('resize', () => { clearTimeout(rz); rz = setTimeout(renderDetail, 120); });
+</script>
+</body>
+</html>
